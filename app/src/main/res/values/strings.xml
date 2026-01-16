@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rail Chatbot</string>
+    <string name="chat_input_hint">Ask about trains...</string>
+    <string name="send_button">Send</string>
+    <string name="connecting">Connecting...</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="error_connection">Connection failed</string>
+    <string name="retry">Retry</string>
+</resources>

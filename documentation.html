@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rail Chatbot - MCP Client Architecture Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+        }
+
+        .header h1 {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .subtitle {
+            font-size: 1.4em;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 30px;
+            margin: 20px 5px 0;
+            font-size: 0.9em;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Section Styles */
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .section-title {
+            font-size: 2em;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+
+        /* Color Themes for Sections */
+        .section.overview .section-title { border-color: #00d9ff; }
+        .section.overview .icon { background: linear-gradient(135deg, #00d9ff, #0099cc); }
+
+        .section.architecture .section-title { border-color: #ff6b6b; }
+        .section.architecture .icon { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); }
+
+        .section.components .section-title { border-color: #4ecdc4; }
+        .section.components .icon { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+
+        .section.dataflow .section-title { border-color: #f9ca24; }
+        .section.dataflow .icon { background: linear-gradient(135deg, #f9ca24, #f0932b); }
+
+        .section.mcp .section-title { border-color: #a29bfe; }
+        .section.mcp .icon { background: linear-gradient(135deg, #a29bfe, #6c5ce7); }
+
+        .section.code .section-title { border-color: #55efc4; }
+        .section.code .icon { background: linear-gradient(135deg, #55efc4, #00b894); }
+
+        /* Architecture Diagram */
+        .arch-diagram {
+            background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            overflow-x: auto;
+        }
+
+        .arch-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .arch-box {
+            padding: 20px 30px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 150px;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .arch-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .arch-box.user { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .arch-box.ui { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .arch-box.viewmodel { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #1a1a2e; }
+        .arch-box.orchestrator { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1a1a2e; }
+        .arch-box.llm { background: linear-gradient(135deg, #fa709a, #fee140); color: #1a1a2e; }
+        .arch-box.mcp { background: linear-gradient(135deg, #a8edea, #fed6e3); color: #1a1a2e; }
+        .arch-box.server { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #1a1a2e; }
+
+        .arch-arrow {
+            font-size: 2em;
+            color: #667eea;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Component Cards */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .component-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .component-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .component-card h3 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .component-card h3 .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .component-card.layer-di h3 .dot { background: #ff6b6b; }
+        .component-card.layer-data h3 .dot { background: #4ecdc4; }
+        .component-card.layer-domain h3 .dot { background: #f9ca24; }
+        .component-card.layer-presentation h3 .dot { background: #a29bfe; }
+
+        .component-card p {
+            color: #b8b8b8;
+            margin-bottom: 15px;
+        }
+
+        .component-card .file-path {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85em;
+            color: #55efc4;
+            word-break: break-all;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e2f;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .code-block pre {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+
+        .code-block .comment { color: #6a9955; }
+        .code-block .keyword { color: #569cd6; }
+        .code-block .string { color: #ce9178; }
+        .code-block .function { color: #dcdcaa; }
+        .code-block .class { color: #4ec9b0; }
+        .code-block .number { color: #b5cea8; }
+
+        /* Flow Steps */
+        .flow-steps {
+            margin: 30px 0;
+        }
+
+        .flow-step {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 25px;
+            padding: 25px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            background: rgba(255,255,255,0.06);
+        }
+
+        .flow-step:nth-child(1) { border-color: #667eea; }
+        .flow-step:nth-child(2) { border-color: #f093fb; }
+        .flow-step:nth-child(3) { border-color: #43e97b; }
+        .flow-step:nth-child(4) { border-color: #fa709a; }
+        .flow-step:nth-child(5) { border-color: #4facfe; }
+        .flow-step:nth-child(6) { border-color: #ff9a9e; }
+        .flow-step:nth-child(7) { border-color: #a8edea; }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .flow-step:nth-child(1) .step-number { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .flow-step:nth-child(2) .step-number { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .flow-step:nth-child(3) .step-number { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1a1a2e; }
+        .flow-step:nth-child(4) .step-number { background: linear-gradient(135deg, #fa709a, #fee140); color: #1a1a2e; }
+        .flow-step:nth-child(5) .step-number { background: linear-gradient(135deg, #4facfe, #00f2fe); color: #1a1a2e; }
+        .flow-step:nth-child(6) .step-number { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #1a1a2e; }
+        .flow-step:nth-child(7) .step-number { background: linear-gradient(135deg, #a8edea, #fed6e3); color: #1a1a2e; }
+
+        .step-content h4 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .step-content p {
+            color: #b8b8b8;
+        }
+
+        /* Tools Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .tool-item {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .tool-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+            transform: scale(1.02);
+        }
+
+        /* MCP Protocol */
+        .protocol-box {
+            background: #1e1e2f;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .protocol-box h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .json-example {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+        }
+
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+
+        /* Tech Stack */
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .tech-item {
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .tech-item.kotlin { background: linear-gradient(135deg, #7F52FF, #C711E1); }
+        .tech-item.compose { background: linear-gradient(135deg, #4285F4, #0F9D58); }
+        .tech-item.hilt { background: linear-gradient(135deg, #FF6F00, #FF8F00); }
+        .tech-item.ktor { background: linear-gradient(135deg, #087CFA, #00AFFF); }
+        .tech-item.openai { background: linear-gradient(135deg, #412991, #10A37F); }
+        .tech-item.mcp { background: linear-gradient(135deg, #E91E63, #9C27B0); }
+
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, rgba(67, 233, 123, 0.1), rgba(56, 249, 215, 0.1));
+            border: 2px solid #43e97b;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .summary-box h3 {
+            color: #43e97b;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .summary-box ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .summary-box li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .summary-box li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #43e97b;
+            font-weight: bold;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px;
+            margin-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #888;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .section { padding: 25px; }
+            .arch-flow { flex-direction: column; }
+            .arch-arrow { transform: rotate(90deg); }
+            .flow-step { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚂 Rail Chatbot</h1>
+            <p class="subtitle">An Android MCP Client that connects AI with Indian Railways data through the Model Context Protocol</p>
+            <div>
+                <span class="badge">Android</span>
+                <span class="badge">Kotlin</span>
+                <span class="badge">Jetpack Compose</span>
+                <span class="badge">MCP Protocol</span>
+                <span class="badge">OpenAI GPT-4</span>
+            </div>
+        </header>
+
+        <!-- Overview Section -->
+        <section class="section overview">
+            <h2 class="section-title">
+                <span class="icon">📱</span>
+                Project Overview
+            </h2>
+            <p style="font-size: 1.1em; margin-bottom: 25px;">
+                Rail Chatbot is a sophisticated Android application that demonstrates how to build an <strong>MCP (Model Context Protocol) Client</strong>
+                that connects a Large Language Model (LLM) with external tools and APIs. The app allows users to query Indian Railways information
+                using natural language, with AI automatically selecting and calling the appropriate IRCTC API tools.
+            </p>
+
+            <div class="tech-stack">
+                <span class="tech-item kotlin">Kotlin 2.0</span>
+                <span class="tech-item compose">Jetpack Compose</span>
+                <span class="tech-item hilt">Hilt DI</span>
+                <span class="tech-item ktor">Ktor HTTP</span>
+                <span class="tech-item openai">OpenAI GPT-4o-mini</span>
+                <span class="tech-item mcp">MCP Protocol</span>
+            </div>
+
+            <div class="summary-box">
+                <h3>🎯 What This App Does</h3>
+                <ul>
+                    <li>Connects to IRCTC MCP Server via RapidAPI for real train data</li>
+                    <li>Uses GPT-4o-mini to understand natural language queries</li>
+                    <li>Automatically selects and calls appropriate train API tools</li>
+                    <li>Supports 17 different IRCTC tools (PNR status, train search, schedules, etc.)</li>
+                    <li>Implements the complete MCP JSON-RPC 2.0 protocol</li>
+                    <li>Features a modern Material 3 chat interface with Jetpack Compose</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section class="section architecture">
+            <h2 class="section-title">
+                <span class="icon">🏗️</span>
+                System Architecture
+            </h2>
+            <p>The application follows Clean Architecture with MVVM pattern, separating concerns into distinct layers:</p>
+
+            <div class="arch-diagram">
+                <div class="arch-flow">
+                    <div class="arch-box user">👤 User<br><small>Natural Language Query</small></div>
+                    <span class="arch-arrow">→</span>
+                    <div class="arch-box ui">📱 Chat UI<br><small>Jetpack Compose</small></div>
+                    <span class="arch-arrow">→</span>
+                    <div class="arch-box viewmodel">🎮 ViewModel<br><small>State Management</small></div>
+                    <span class="arch-arrow">→</span>
+                    <div class="arch-box orchestrator">🧠 Orchestrator<br><small>AI + Tools Loop</small></div>
+                </div>
+                <br><br>
+                <div class="arch-flow">
+                    <div class="arch-box orchestrator">🧠 Orchestrator</div>
+                    <span class="arch-arrow">↔</span>
+                    <div class="arch-box llm">🤖 LLM Client<br><small>OpenAI GPT-4</small></div>
+                    <span class="arch-arrow">↔</span>
+                    <div class="arch-box mcp">🔌 MCP Client<br><small>JSON-RPC 2.0</small></div>
+                    <span class="arch-arrow">↔</span>
+                    <div class="arch-box server">🌐 IRCTC Server<br><small>RapidAPI MCP</small></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Flow Section -->
+        <section class="section dataflow">
+            <h2 class="section-title">
+                <span class="icon">🔄</span>
+                Complete Data Flow
+            </h2>
+            <p>Here's exactly what happens when you send a message like <strong>"Check PNR status 1234567890"</strong>:</p>
+
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>User Input Captured</h4>
+                        <p>User types message in <code>ChatInputBar</code> → <code>ChatViewModel</code> receives <code>ChatIntent.SendMessage</code> → Creates <code>ChatMessage</code> with role USER</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Orchestrator Initialized</h4>
+                        <p><code>SendMessageUseCase</code> → <code>ChatOrchestrator.processMessage()</code> → Ensures MCP client is connected → Fetches available tools via <code>tools/list</code></p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>LLM Analyzes Request</h4>
+                        <p><code>OpenAiLlmClient.chat()</code> sends conversation + 17 tool definitions to GPT-4o-mini → LLM understands intent and returns <code>tool_calls</code> response requesting <code>Get_PNR_Status_Detail</code></p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>MCP Tool Execution</h4>
+                        <p><code>McpClientWrapper.callTool()</code> sends JSON-RPC request to MCP server → Server calls actual IRCTC API → Returns train data as <code>McpToolResult</code></p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>Result Back to LLM</h4>
+                        <p>Tool result added to conversation → Sent back to LLM → LLM formats the raw API data into a human-readable response</p>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h4>UI Updated</h4>
+                        <p><code>OrchestratorEvent.ResponseComplete</code> → <code>ChatViewModel</code> updates <code>ChatUiState</code> → Compose recomposes <code>MessageList</code> with new assistant message</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Components Section -->
+        <section class="section components">
+            <h2 class="section-title">
+                <span class="icon">🧩</span>
+                Application Components
+            </h2>
+
+            <h3 style="margin: 30px 0 20px; color: #ff6b6b;">📦 Dependency Injection Layer</h3>
+            <div class="component-grid">
+                <div class="component-card layer-di">
+                    <h3><span class="dot"></span>NetworkModule</h3>
+                    <p>Provides Ktor HTTP client configured with OkHttp engine, JSON serialization, and logging for network requests.</p>
+                    <div class="file-path">di/NetworkModule.kt</div>
+                </div>
+                <div class="component-card layer-di">
+                    <h3><span class="dot"></span>McpModule</h3>
+                    <p>Configures and provides the MCP client wrapper with server URL and API credentials from BuildConfig.</p>
+                    <div class="file-path">di/McpModule.kt</div>
+                </div>
+                <div class="component-card layer-di">
+                    <h3><span class="dot"></span>AiModule</h3>
+                    <p>Provides OpenAI client instance and LlmClient implementation for AI-powered chat completion.</p>
+                    <div class="file-path">di/AiModule.kt</div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: #4ecdc4;">💾 Data Layer</h3>
+            <div class="component-grid">
+                <div class="component-card layer-data">
+                    <h3><span class="dot"></span>McpClientWrapper</h3>
+                    <p>Core MCP client that handles JSON-RPC 2.0 protocol communication. Manages connection lifecycle, sends requests for initialize, tools/list, and tools/call methods.</p>
+                    <div class="file-path">data/remote/mcp/McpClientWrapper.kt</div>
+                </div>
+                <div class="component-card layer-data">
+                    <h3><span class="dot"></span>OpenAiLlmClient</h3>
+                    <p>Implements LlmClient interface using OpenAI's API. Converts MCP tools to OpenAI function definitions and handles tool_calls responses.</p>
+                    <div class="file-path">data/remote/ai/OpenAiLlmClient.kt</div>
+                </div>
+                <div class="component-card layer-data">
+                    <h3><span class="dot"></span>ChatRepository</h3>
+                    <p>In-memory repository managing conversation history using StateFlow. Provides methods to add, update, and clear messages.</p>
+                    <div class="file-path">data/repository/ChatRepository.kt</div>
+                </div>
+                <div class="component-card layer-data">
+                    <h3><span class="dot"></span>MCP Models</h3>
+                    <p>Data classes for MCP protocol: McpTool, McpToolResult, JsonRpcRequest, JsonRpcResponse with Kotlinx Serialization.</p>
+                    <div class="file-path">data/remote/mcp/model/McpTool.kt</div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: #f9ca24;">🎯 Domain Layer</h3>
+            <div class="component-grid">
+                <div class="component-card layer-domain">
+                    <h3><span class="dot"></span>ChatOrchestrator</h3>
+                    <p><strong>The Brain!</strong> Implements the AI + Tool calling loop. Receives user message, sends to LLM with tools, executes any requested tool calls via MCP, returns results to LLM until final response.</p>
+                    <div class="file-path">domain/orchestrator/ChatOrchestrator.kt</div>
+                </div>
+                <div class="component-card layer-domain">
+                    <h3><span class="dot"></span>SendMessageUseCase</h3>
+                    <p>Clean Architecture use case that wraps ChatOrchestrator. Returns Flow of OrchestratorEvents for reactive UI updates.</p>
+                    <div class="file-path">domain/usecase/SendMessageUseCase.kt</div>
+                </div>
+                <div class="component-card layer-domain">
+                    <h3><span class="dot"></span>ChatMessage</h3>
+                    <p>Domain model representing a chat message with id, role (USER/ASSISTANT/SYSTEM/TOOL), content, timestamp, and optional tool calls.</p>
+                    <div class="file-path">domain/model/ChatMessage.kt</div>
+                </div>
+            </div>
+
+            <h3 style="margin: 30px 0 20px; color: #a29bfe;">🎨 Presentation Layer</h3>
+            <div class="component-grid">
+                <div class="component-card layer-presentation">
+                    <h3><span class="dot"></span>ChatViewModel</h3>
+                    <p>Hilt ViewModel managing UI state with StateFlow. Handles user intents (SendMessage, UpdateInput, Retry) and orchestrator events.</p>
+                    <div class="file-path">presentation/chat/ChatViewModel.kt</div>
+                </div>
+                <div class="component-card layer-presentation">
+                    <h3><span class="dot"></span>ChatScreen</h3>
+                    <p>Main Composable with Scaffold layout containing TopAppBar, MessageList, TypingIndicator, and ChatInputBar.</p>
+                    <div class="file-path">presentation/chat/ChatScreen.kt</div>
+                </div>
+                <div class="component-card layer-presentation">
+                    <h3><span class="dot"></span>MessageBubble</h3>
+                    <p>Styled chat bubble component with different colors for user (primary) and assistant (surface variant) messages.</p>
+                    <div class="file-path">presentation/chat/components/MessageBubble.kt</div>
+                </div>
+                <div class="component-card layer-presentation">
+                    <h3><span class="dot"></span>TypingIndicator</h3>
+                    <p>Animated component showing thinking state, tool call status (executing/completed/failed), or animated dots.</p>
+                    <div class="file-path">presentation/chat/components/TypingIndicator.kt</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MCP Protocol Section -->
+        <section class="section mcp">
+            <h2 class="section-title">
+                <span class="icon">🔌</span>
+                MCP Protocol Details
+            </h2>
+            <p>The Model Context Protocol (MCP) enables AI applications to connect with external tools and data sources using JSON-RPC 2.0.</p>
+
+            <h3 style="margin: 30px 0 15px;">Available IRCTC Tools (17 total)</h3>
+            <div class="tools-grid">
+                <div class="tool-item">Get_PNR_Status_Detail</div>
+                <div class="tool-item">CheckPNRStatus</div>
+                <div class="tool-item">Get_PNR_Status_V3</div>
+                <div class="tool-item">TrainsBetweenStations</div>
+                <div class="tool-item">TrainsBetweenStations_V3</div>
+                <div class="tool-item">Get_Train_Schedule</div>
+                <div class="tool-item">Get_Train_Schedule_V2</div>
+                <div class="tool-item">Get_Train_Live_Status</div>
+                <div class="tool-item">CheckSeatAvailability</div>
+                <div class="tool-item">CheckSeatAvailability_V2</div>
+                <div class="tool-item">Get_Fare</div>
+                <div class="tool-item">GetFare</div>
+                <div class="tool-item">GetTrainClasses</div>
+                <div class="tool-item">SearchTrain</div>
+                <div class="tool-item">SearchStation</div>
+                <div class="tool-item">Get_Live_Station</div>
+                <div class="tool-item">Get_Trains_By_Station</div>
+            </div>
+
+            <h3 style="margin: 30px 0 15px;">Protocol Flow</h3>
+
+            <div class="protocol-box">
+                <h4>1. Initialize Connection</h4>
+                <div class="json-example">
+<pre><span class="json-key">"method"</span>: <span class="json-string">"initialize"</span>,
+<span class="json-key">"params"</span>: {
+  <span class="json-key">"protocolVersion"</span>: <span class="json-string">"2024-11-05"</span>,
+  <span class="json-key">"clientInfo"</span>: { <span class="json-key">"name"</span>: <span class="json-string">"RailChatbot"</span>, <span class="json-key">"version"</span>: <span class="json-string">"1.0.0"</span> }
+}</pre>
+                </div>
+            </div>
+
+            <div class="protocol-box">
+                <h4>2. List Available Tools</h4>
+                <div class="json-example">
+<pre><span class="json-key">"method"</span>: <span class="json-string">"tools/list"</span>
+// Response contains 17 tools with name, description, and inputSchema</pre>
+                </div>
+            </div>
+
+            <div class="protocol-box">
+                <h4>3. Call a Tool</h4>
+                <div class="json-example">
+<pre><span class="json-key">"method"</span>: <span class="json-string">"tools/call"</span>,
+<span class="json-key">"params"</span>: {
+  <span class="json-key">"name"</span>: <span class="json-string">"Get_PNR_Status_Detail"</span>,
+  <span class="json-key">"arguments"</span>: { <span class="json-key">"pnrNumber"</span>: <span class="json-string">"1234567890"</span> }
+}</pre>
+                </div>
+            </div>
+
+            <div class="protocol-box">
+                <h4>Required HTTP Headers</h4>
+                <div class="json-example">
+<pre><span class="json-key">x-api-host</span>: irctc1.p.rapidapi.com
+<span class="json-key">x-api-key</span>: your-rapidapi-key
+<span class="json-key">Content-Type</span>: application/json</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Structure Section -->
+        <section class="section code">
+            <h2 class="section-title">
+                <span class="icon">📁</span>
+                Project Structure
+            </h2>
+
+            <div class="code-block">
+<pre>
+<span class="comment">// 📦 Complete Project Structure</span>
+
+app/src/main/java/com/example/railchatbot/
+├── <span class="class">RailChatApplication.kt</span>      <span class="comment">// @HiltAndroidApp entry point</span>
+├── <span class="class">MainActivity.kt</span>             <span class="comment">// @AndroidEntryPoint host</span>
+│
+├── <span class="keyword">di/</span>                           <span class="comment">// Dependency Injection</span>
+│   ├── NetworkModule.kt         <span class="comment">// Ktor HTTP client</span>
+│   ├── McpModule.kt             <span class="comment">// MCP client configuration</span>
+│   └── AiModule.kt              <span class="comment">// OpenAI client</span>
+│
+├── <span class="keyword">data/</span>                         <span class="comment">// Data Layer</span>
+│   ├── remote/
+│   │   ├── mcp/
+│   │   │   ├── <span class="function">McpClientWrapper.kt</span>   <span class="comment">// JSON-RPC client</span>
+│   │   │   └── model/
+│   │   │       └── McpTool.kt        <span class="comment">// Protocol models</span>
+│   │   └── ai/
+│   │       ├── <span class="function">LlmClient.kt</span>          <span class="comment">// Interface</span>
+│   │       └── <span class="function">OpenAiLlmClient.kt</span>    <span class="comment">// GPT-4 implementation</span>
+│   └── repository/
+│       └── ChatRepository.kt    <span class="comment">// Message storage</span>
+│
+├── <span class="keyword">domain/</span>                       <span class="comment">// Business Logic</span>
+│   ├── model/
+│   │   └── ChatMessage.kt       <span class="comment">// Domain models</span>
+│   ├── usecase/
+│   │   └── SendMessageUseCase.kt
+│   └── orchestrator/
+│       └── <span class="function">ChatOrchestrator.kt</span>  <span class="comment">// 🧠 Core AI + Tools loop</span>
+│
+└── <span class="keyword">presentation/</span>                <span class="comment">// UI Layer</span>
+    ├── theme/
+    │   └── Theme.kt             <span class="comment">// Material 3 theme</span>
+    └── chat/
+        ├── ChatScreen.kt        <span class="comment">// Main Composable</span>
+        ├── ChatViewModel.kt     <span class="comment">// State management</span>
+        ├── ChatUiState.kt       <span class="comment">// UI state model</span>
+        └── components/
+            ├── MessageBubble.kt
+            ├── MessageList.kt
+            ├── ChatInputBar.kt
+            ├── TypingIndicator.kt
+            └── StatusIndicator.kt
+</pre>
+            </div>
+
+            <h3 style="margin: 30px 0 15px;">Key Code: ChatOrchestrator (The Brain)</h3>
+            <div class="code-block">
+<pre>
+<span class="keyword">class</span> <span class="class">ChatOrchestrator</span> <span class="keyword">@Inject constructor</span>(
+    <span class="keyword">private val</span> llmClient: <span class="class">LlmClient</span>,
+    <span class="keyword">private val</span> mcpClient: <span class="class">McpClientWrapper</span>
+) {
+    <span class="keyword">fun</span> <span class="function">processMessage</span>(userMessage: String): <span class="class">Flow</span>&lt;OrchestratorEvent&gt; = <span class="function">flow</span> {
+        <span class="comment">// 1. Get available MCP tools</span>
+        <span class="keyword">val</span> tools = mcpClient.<span class="function">listTools</span>()
+
+        <span class="comment">// 2. Send message + tools to LLM</span>
+        <span class="keyword">val</span> response = llmClient.<span class="function">chat</span>(messages, tools)
+
+        <span class="comment">// 3. If LLM requests tool calls...</span>
+        <span class="keyword">when</span> (response) {
+            <span class="keyword">is</span> ToolCallsResponse -> {
+                <span class="comment">// Execute each tool via MCP</span>
+                <span class="keyword">for</span> (toolCall <span class="keyword">in</span> response.toolCalls) {
+                    <span class="keyword">val</span> result = mcpClient.<span class="function">callTool</span>(toolCall.name, toolCall.args)
+                    <span class="function">emit</span>(ToolCallCompleted(result))
+                }
+                <span class="comment">// Send results back to LLM for final response</span>
+            }
+            <span class="keyword">is</span> TextResponse -> {
+                <span class="function">emit</span>(ResponseComplete(response.text))
+            }
+        }
+    }
+}
+</pre>
+            </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="section overview">
+            <h2 class="section-title">
+                <span class="icon">🎉</span>
+                Summary
+            </h2>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px;">
+                <div class="summary-box" style="border-color: #667eea;">
+                    <h3 style="color: #667eea;">🏛️ Architecture Highlights</h3>
+                    <ul>
+                        <li>Clean Architecture with MVVM/MVI pattern</li>
+                        <li>Unidirectional data flow</li>
+                        <li>Dependency injection with Hilt</li>
+                        <li>Reactive state with Kotlin Flow</li>
+                        <li>Separation of concerns across layers</li>
+                    </ul>
+                </div>
+
+                <div class="summary-box" style="border-color: #f093fb;">
+                    <h3 style="color: #f093fb;">🤖 AI Integration</h3>
+                    <ul>
+                        <li>OpenAI GPT-4o-mini for natural language</li>
+                        <li>Function calling for tool selection</li>
+                        <li>Automatic tool-to-function mapping</li>
+                        <li>Multi-turn conversation support</li>
+                        <li>Graceful error handling</li>
+                    </ul>
+                </div>
+
+                <div class="summary-box" style="border-color: #4ecdc4;">
+                    <h3 style="color: #4ecdc4;">🔌 MCP Implementation</h3>
+                    <ul>
+                        <li>Full JSON-RPC 2.0 protocol</li>
+                        <li>HTTP transport with custom headers</li>
+                        <li>Dynamic tool discovery</li>
+                        <li>17 IRCTC API tools available</li>
+                        <li>Session management support</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Built with ❤️ using Kotlin, Jetpack Compose, and the Model Context Protocol</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">Documentation generated for Rail Chatbot - Android MCP Client</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Train icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,24c-11,0 -20,9 -20,20v20c0,4.4 3.6,8 8,8h4l-4,8h4l4,-8h8l4,8h4l-4,-8h4c4.4,0 8,-3.6 8,-8v-20c0,-11 -9,-20 -20,-20zM44,68c-2.2,0 -4,-1.8 -4,-4s1.8,-4 4,-4s4,1.8 4,4s-1.8,4 -4,4zM64,68c-2.2,0 -4,-1.8 -4,-4s1.8,-4 4,-4s4,1.8 4,4s-1.8,4 -4,4zM70,52H38v-8c0,-8.8 7.2,-16 16,-16s16,7.2 16,16v8z"/>
+</vector>
