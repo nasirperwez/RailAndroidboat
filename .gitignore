@@ -77,3 +77,6 @@ lint/tmp/
 
 # Mac OS
 .DS_Store
+
+# Backend server (separate repo)
+rail-chatbot-backend/

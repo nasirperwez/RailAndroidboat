@@ -5,8 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.railchatbot.data.repository.ChatRepository
 import com.example.railchatbot.domain.model.ChatMessage
 import com.example.railchatbot.domain.model.MessageRole
-import com.example.railchatbot.domain.orchestrator.OrchestratorEvent
-import com.example.railchatbot.domain.usecase.InitializeMcpUseCase
+import com.example.railchatbot.domain.model.OrchestratorEvent
 import com.example.railchatbot.domain.usecase.SendMessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +21,6 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val sendMessageUseCase: SendMessageUseCase,
-    private val initializeMcpUseCase: InitializeMcpUseCase,
     private val chatRepository: ChatRepository
 ) : ViewModel() {
 
@@ -44,27 +42,13 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun initialize() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isConnecting = true, error = null) }
-
-            initializeMcpUseCase()
-                .onSuccess {
-                    _uiState.update {
-                        it.copy(
-                            isConnected = true,
-                            isConnecting = false
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(
-                            isConnected = false,
-                            isConnecting = false,
-                            error = "Failed to connect: ${error.message}"
-                        )
-                    }
-                }
+        // Backend handles MCP initialization - just mark as connected
+        _uiState.update {
+            it.copy(
+                isConnected = true,
+                isConnecting = false,
+                error = null
+            )
         }
     }
 

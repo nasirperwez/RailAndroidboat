@@ -1,7 +1,7 @@
 package com.example.railchatbot.di
 
 import com.example.railchatbot.BuildConfig
-import com.example.railchatbot.data.remote.mcp.McpClientWrapper
+import com.example.railchatbot.data.remote.backend.BackendClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,20 +10,21 @@ import io.ktor.client.HttpClient
 import kotlinx.serialization.json.Json
 import javax.inject.Singleton
 
+/**
+ * Hilt module for backend client dependencies.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
-object McpModule {
+object BackendModule {
 
     @Provides
     @Singleton
-    fun provideMcpClientWrapper(
+    fun provideBackendClient(
         httpClient: HttpClient,
         json: Json
-    ): McpClientWrapper = McpClientWrapper(
+    ): BackendClient = BackendClient(
         httpClient = httpClient,
         json = json,
-        serverUrl = BuildConfig.MCP_SERVER_URL,
-        apiHost = BuildConfig.RAPIDAPI_HOST,
-        apiKey = BuildConfig.RAPIDAPI_KEY
+        backendUrl = BuildConfig.BACKEND_URL
     )
 }

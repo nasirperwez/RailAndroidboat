@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Load local.properties
+// Load local.properties for backend URL configuration
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -30,16 +30,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // MCP Server Configuration
-        buildConfigField("String", "MCP_SERVER_URL", "\"https://mcp.rapidapi.com\"")
-        buildConfigField("String", "RAPIDAPI_HOST", "\"irctc1.p.rapidapi.com\"")
-
-        // API Keys - Load from local.properties (required)
-        val rapidApiKey = localProperties.getProperty("RAPIDAPI_KEY") ?: ""
-        val openAiKey = localProperties.getProperty("OPENAI_API_KEY") ?: ""
-
-        buildConfigField("String", "RAPIDAPI_KEY", "\"$rapidApiKey\"")
-        buildConfigField("String", "OPENAI_API_KEY", "\"$openAiKey\"")
+        // Backend Server URL - Update this to your server's IP/domain
+        // For local development with emulator, use 10.0.2.2 (host machine)
+        // For local development with device, use your machine's IP address
+        val backendUrl = localProperties.getProperty("BACKEND_URL") ?: "http://10.0.2.2:8000"
+        buildConfigField("String", "BACKEND_URL", "\"$backendUrl\"")
     }
 
     buildTypes {
@@ -93,18 +88,12 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // MCP Kotlin SDK
-    implementation(libs.mcp.kotlin.sdk)
-
-    // Ktor (HTTP client for MCP)
+    // Ktor (HTTP client for backend communication)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.client.logging)
-
-    // OpenAI
-    implementation(libs.openai.kotlin)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
