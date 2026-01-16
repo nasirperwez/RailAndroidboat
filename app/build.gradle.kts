@@ -34,9 +34,8 @@ android {
         buildConfigField("String", "MCP_SERVER_URL", "\"https://mcp.rapidapi.com\"")
         buildConfigField("String", "RAPIDAPI_HOST", "\"irctc1.p.rapidapi.com\"")
 
-        // API Keys - Load from local.properties
-        val rapidApiKey = localProperties.getProperty("RAPIDAPI_KEY")
-            ?: "898a176891msh33f026f07a9de1bp152cf1jsn4be0c806136c"
+        // API Keys - Load from local.properties (required)
+        val rapidApiKey = localProperties.getProperty("RAPIDAPI_KEY") ?: ""
         val openAiKey = localProperties.getProperty("OPENAI_API_KEY") ?: ""
 
         buildConfigField("String", "RAPIDAPI_KEY", "\"$rapidApiKey\"")
